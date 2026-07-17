@@ -4,7 +4,7 @@
 #  使い方: package.json の version を上げて Push するだけ
 #  手動実行: Actions → 左の「Build & Release (Windows)」→ 右上「Run workflow」
 #
-#  公開先のリポジトリ名は GitHub から自動で受け取るため、設定は不要。
+#  公開先は GitHub から自動で受け取るため、リポジトリ名の設定は不要。
 # ─────────────────────────────────────────────
 name: Build & Release (Windows)
 
@@ -51,7 +51,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 画面側をビルド（ここで落ちたら型エラー） ──
+      # 公開先を package.json に書き込む。
+      # コマンド行で渡すとシェルの解釈で壊れるため、ファイルに直接書く。
+      - name: 公開先を設定
+        if: steps.exists.outputs.found == 'false'
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            p.repository = { type: 'git', url: 'https://github.com/${{ github.repository }}.git' };
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2));
+            console.log('公開先: ${{ github.repository }}');
+          "
+
+      # ここで落ちたら型エラー
       - name: 画面をビルド
         if: steps.exists.outputs.found == 'false'
         run: npm run build:web
@@ -63,26 +77,12 @@ jobs:
           VITE_FB_SENDER_ID: ${{ secrets.VITE_FB_SENDER_ID }}
           VITE_FB_APP_ID: ${{ secrets.VITE_FB_APP_ID }}
 
-      # ── Setup.exe を作って公開（ここで落ちたらアイコンか署名） ──
+      # ここで落ちたらアイコンか署名
       - name: Setup.exe を作って公開
         if: steps.exists.outputs.found == 'false'
-        run: >
-          npx electron-builder --win --x64 --publish always
-          -c.publish.provider=github
-          -c.publish.owner=${{ github.repository_owner }}
-          -c.publish.repo=${{ github.event.repository.name }}
+        run: npx electron-builder --win --x64 --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 失敗したときの手がかりを残す
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            release/**/*.yml
-            npm-debug.log
-          if-no-files-found: ignore
 
       - name: 公開済みの場合の案内
         if: steps.exists.outputs.found == 'true'
