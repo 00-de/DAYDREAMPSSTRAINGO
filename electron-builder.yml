@@ -45,6 +45,7 @@ nsis:
 
 publish:
   provider: github
-  owner: 00-de
-  repo: DAYDREAMPS-TRAIN-GO
   releaseType: release
+  # owner / repo はここに書かない。
+  # GitHub Actions が動いているリポジトリを release.yml から自動で流し込む。
+  # そのためリポジトリ名を変えても作り直しても、設定を直す必要がない。

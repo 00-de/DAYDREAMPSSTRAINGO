@@ -1,7 +1,10 @@
 # ─────────────────────────────────────────────
 #  Setup.exe を自動で作って GitHub Releases に公開する
-#  使い方: package.json の version を上げて GitHub Desktop で Push するだけ
+#
+#  使い方: package.json の version を上げて Push するだけ
 #  手動実行: Actions → 左の「Build & Release (Windows)」→ 右上「Run workflow」
+#
+#  公開先のリポジトリ名は GitHub から自動で受け取るため、設定は不要。
 # ─────────────────────────────────────────────
 name: Build & Release (Windows)
 
@@ -9,7 +12,7 @@ on:
   push:
     branches:
       - main
-      - master      # 既定ブランチが master でも動くようにする
+      - master
   workflow_dispatch:
 
 permissions:
@@ -48,17 +51,38 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ビルドして公開
+      # ── 画面側をビルド（ここで落ちたら型エラー） ──
+      - name: 画面をビルド
         if: steps.exists.outputs.found == 'false'
-        run: npm run release
+        run: npm run build:web
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_FB_API_KEY: ${{ secrets.VITE_FB_API_KEY }}
           VITE_FB_AUTH_DOMAIN: ${{ secrets.VITE_FB_AUTH_DOMAIN }}
           VITE_FB_PROJECT_ID: ${{ secrets.VITE_FB_PROJECT_ID }}
           VITE_FB_STORAGE_BUCKET: ${{ secrets.VITE_FB_STORAGE_BUCKET }}
           VITE_FB_SENDER_ID: ${{ secrets.VITE_FB_SENDER_ID }}
           VITE_FB_APP_ID: ${{ secrets.VITE_FB_APP_ID }}
+
+      # ── Setup.exe を作って公開（ここで落ちたらアイコンか署名） ──
+      - name: Setup.exe を作って公開
+        if: steps.exists.outputs.found == 'false'
+        run: >
+          npx electron-builder --win --x64 --publish always
+          -c.publish.provider=github
+          -c.publish.owner=${{ github.repository_owner }}
+          -c.publish.repo=${{ github.event.repository.name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 失敗したときの手がかりを残す
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            release/**/*.yml
+            npm-debug.log
+          if-no-files-found: ignore
 
       - name: 公開済みの場合の案内
         if: steps.exists.outputs.found == 'true'

@@ -11,9 +11,10 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.node.json && vite build && electron-builder --win --x64 --publish never",
-    "release": "tsc -p tsconfig.node.json && vite build && electron-builder --win --x64 --publish always",
-    "preview": "vite preview"
+    "build": "npm run build:web && electron-builder --win --x64 --publish never",
+    "release": "npm run build:web && electron-builder --win --x64 --publish always",
+    "preview": "vite preview",
+    "build:web": "tsc -p tsconfig.node.json && vite build"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
