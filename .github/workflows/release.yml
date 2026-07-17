@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────
+#  Setup.exe を自動で作って GitHub Releases に公開する
+#  使い方: package.json の version を上げて GitHub Desktop で Push するだけ
+#  手動実行: Actions → 左の「Build & Release (Windows)」→ 右上「Run workflow」
+# ─────────────────────────────────────────────
+name: Build & Release (Windows)
+
+on:
+  push:
+    branches:
+      - main
+      - master      # 既定ブランチが master でも動くようにする
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: ソースを取得
+        uses: actions/checkout@v4
+
+      - name: Node.js を用意
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 依存関係をインストール
+        run: npm install
+
+      - name: バージョンを読み取る
+        id: ver
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: 同じバージョンの Release があるか確認
+        id: exists
+        shell: bash
+        run: |
+          if gh release view "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ビルドして公開
+        if: steps.exists.outputs.found == 'false'
+        run: npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_FB_API_KEY: ${{ secrets.VITE_FB_API_KEY }}
+          VITE_FB_AUTH_DOMAIN: ${{ secrets.VITE_FB_AUTH_DOMAIN }}
+          VITE_FB_PROJECT_ID: ${{ secrets.VITE_FB_PROJECT_ID }}
+          VITE_FB_STORAGE_BUCKET: ${{ secrets.VITE_FB_STORAGE_BUCKET }}
+          VITE_FB_SENDER_ID: ${{ secrets.VITE_FB_SENDER_ID }}
+          VITE_FB_APP_ID: ${{ secrets.VITE_FB_APP_ID }}
+
+      - name: 公開済みの場合の案内
+        if: steps.exists.outputs.found == 'true'
+        run: echo "v${{ steps.ver.outputs.version }} は公開済みです。package.json の version を上げてください。"

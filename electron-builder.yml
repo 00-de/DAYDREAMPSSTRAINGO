@@ -1,0 +1,50 @@
+appId: jp.daydream.traindriversimulator
+productName: Train Driver Simulator
+copyright: Copyright (c) 2026 Toshi
+
+directories:
+  output: release/${version}
+  buildResources: build
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter: ["**/*"]
+
+# ── 差分アップデート（blockmap による delta 配信） ──
+# electron-builder は NSIS ビルド時に .exe.blockmap を自動生成する。
+# electron-updater は差分のみをダウンロードするため通信量が大幅に削減される。
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # 署名する場合は下記のコメントを外す（証明書は GitHub Secrets で渡す）
+  # certificateSubjectName: "Your Company Name"
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: false
+  installerLanguages: [ja_JP]
+  language: 1041
+  # 既定のインストール先: C:\Program Files\Train Driver Simulator
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Train Driver Simulator
+  menuCategory: false
+  deleteAppDataOnUninstall: false
+  differentialPackage: true
+  include: build/installer.nsh
+
+publish:
+  provider: github
+  owner: 00-de
+  repo: DAYDREAMPS-TRAIN-GO
+  releaseType: release

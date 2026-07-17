@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-cab text-slate-200 font-panel antialiased select-none overflow-hidden;
+  }
+  :focus-visible {
+    outline: 2px solid theme('colors.lamp.amber');
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* 運転台のプレート。刻印されたラベルのように見せる */
+  .plate {
+    @apply bg-panel border border-rail/70 rounded-sm shadow-inset;
+  }
+  .eyebrow {
+    @apply text-[10px] tracking-[0.4em] uppercase text-slate-500;
+  }
+  /* 保安装置の表示灯 */
+  .lamp {
+    @apply w-2.5 h-2.5 rounded-full border border-black/40;
+  }
+  .lamp-on-green  { @apply bg-lamp-green; box-shadow: 0 0 10px theme('colors.lamp.green'); }
+  .lamp-on-amber  { @apply bg-lamp-amber; box-shadow: 0 0 10px theme('colors.lamp.amber'); }
+  .lamp-on-red    { @apply bg-lamp-red;   box-shadow: 0 0 10px theme('colors.lamp.red'); }
+  .lamp-off       { @apply bg-rail/60; }
+
+  .btn {
+    @apply px-5 py-2.5 rounded-sm text-sm font-medium tracking-wide
+           border border-rail bg-rail/40 text-slate-200
+           hover:bg-rail/70 active:translate-y-px transition;
+  }
+  .btn-primary {
+    @apply border-lamp-green/60 bg-lamp-green/15 text-lamp-green hover:bg-lamp-green/25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
